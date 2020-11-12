@@ -16,6 +16,9 @@ class _MainAppState extends State<MainApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   var _controller = ItemController();
 
+  List _listagem=[];
+  ItemController _icontroller = null;
+
   String _theme = 'Light';
   var _themeData = ThemeData.light();
 
@@ -36,8 +39,7 @@ class _MainAppState extends State<MainApp> {
   var _nameitemController = TextEditingController();
   var _whoController = TextEditingController();
   var _priceController = TextEditingController();
-
-  List _listagem=[];
+  var _amountController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -64,33 +66,34 @@ class _MainAppState extends State<MainApp> {
 
          body: Scrollbar(
           child: Observer(builder:(BuildContext _context){
-            _controller = Provider.of<ItemController>(_context);
-            if(_controller.status == AppStatus.success){
-            return ListView(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            children: [
-              for (int i = 0; i < _listagem.length; i++)
-                ListTile(
-                    leading: ExcludeSemantics(
-                        child: CircleAvatar(child:Text('${i + 1}'),
-                          backgroundColor: Color.fromRGBO(255,153,153,10),
-                          foregroundColor: Colors.white,
-                          maxRadius: 17,
-                        )
-                    ),
-                    title: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children:[
-                        //Name of the bottons in the row
-                        _listItemName(i),
-                        _listwhoController(i),
-                        _listItemPrice(i),
-                        _listDelete(i),
-                      ],
-                    )
-                ),
-            ],
-          );
+            _icontroller = Provider.of<ItemController>(_context);
+            if(_icontroller.status == AppStatus.success){
+              return ListView(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              children: [
+                for (int i = 0; i < _listagem.length; i++)
+                  ListTile(
+                      leading: ExcludeSemantics(
+                          child: CircleAvatar(child:Text('${i + 1}'),
+                            backgroundColor: Color.fromRGBO(255,153,153,10),
+                            foregroundColor: Colors.white,
+                            maxRadius: 17,
+                          )
+                      ),
+                      title: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children:[
+                          //Name of the bottons in the row
+                          _listItemName(i),
+                          _listwhoController(i),
+                          _listItemPrice(i),
+                          _listItemAmount(i),
+                          _listDelete(i),
+                        ],
+                      )
+                  ),
+              ],
+            );
             }else{
               return Center(
                 child: CircularProgressIndicator(),
@@ -197,10 +200,21 @@ class _MainAppState extends State<MainApp> {
       ),
     );
   }
+
   //Label Price
   _listItemPrice(int i)
   {
     String text = _listagem[i].preco != null ? "R\$ "+_listagem[i].preco.toStringAsFixed(2) : "";
+    return Container(
+      child: Text(
+          text
+      ),
+    );
+  }
+
+  //Quantidade
+  _listItemAmount(int i){
+    String text = _listagem[i].quantidade != null ? "x"+_listagem[i].quantidade.toString() : "";
     return Expanded(
       child: Text(
           text
@@ -217,13 +231,11 @@ class _MainAppState extends State<MainApp> {
         color: Colors.cyan,
       ),
       onPressed: (){
-        setState(() {
           _controller.delete(_listagem[i].id).then((data) {
             setState(() {
               _listagem = _controller.list;
             });
           });
-        });
       },
     );
   }
@@ -261,6 +273,25 @@ class _MainAppState extends State<MainApp> {
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(labelText: "Price", prefixText: "R\$ "),
                         ),
+                        TextFormField(
+                          controller: _amountController,
+                          validator: (s) {
+                            if (s.isEmpty){
+                              return null;
+                            }else{
+                              int value = int.tryParse(s) ?? 1;
+                              if(value < 1){
+                                return "Please enter a valid value";
+                              }
+                                return null;
+                            }
+                          },
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                              labelText: "How much?",
+                              prefixText: "x "
+                          ),
+                        ),
                       ],
                     )
                 )
@@ -276,15 +307,18 @@ class _MainAppState extends State<MainApp> {
                 child: new Text('Save'),
                 onPressed: () {
                   if (_formKey.currentState.validate()) {
-                    setState(() {
-                      _controller.create(Produto(
+                    _controller.create(Produto(
                           nomeproduto: _nameitemController.text,
                           pessoa: _whoController.text,
-                          preco: double.tryParse(_priceController.text) ?? 0
+                          preco: double.tryParse(_priceController.text) ?? 0,
+                          quantidade: int.tryParse(_amountController.text) ?? 1
                       ));
+                    setState(() {
+                      _listagem = _controller.list;
                       _nameitemController.text = "";
                       _whoController.text = "";
                       _priceController.text = "";
+                      _amountController.text = "";
                     });
                     Navigator.of(context).pop();
                   }
