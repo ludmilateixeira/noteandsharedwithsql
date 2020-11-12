@@ -1,6 +1,6 @@
 # noteandsharedwithsql
 
-A new Flutter application.
+VINICIUS HELP ME
 
 ## Getting Started
 
